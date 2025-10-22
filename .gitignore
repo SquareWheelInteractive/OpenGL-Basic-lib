@@ -1,6 +1,7 @@
 .cache/
 # Prerequisites
 *.d
+./OpenGL-Basic-lib/compile_commands.json
 
 # Object files
 *.o
