@@ -1,0 +1,47 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-I.",
+      "-I./external",
+      "-c",
+      "-o",
+      "main.o",
+      "main.c"
+    ],
+    "directory": "/home/mateo/Desktop/Programming/OpenGL",
+    "file": "/home/mateo/Desktop/Programming/OpenGL/main.c",
+    "output": "/home/mateo/Desktop/Programming/OpenGL/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-I.",
+      "-I./external",
+      "-c",
+      "-o",
+      "glad/glad.o",
+      "glad/glad.c"
+    ],
+    "directory": "/home/mateo/Desktop/Programming/OpenGL",
+    "file": "/home/mateo/Desktop/Programming/OpenGL/glad/glad.c",
+    "output": "/home/mateo/Desktop/Programming/OpenGL/glad/glad.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-I.",
+      "-I./external",
+      "-c",
+      "-o",
+      "mplib/mplib.o",
+      "mplib/mplib.c"
+    ],
+    "directory": "/home/mateo/Desktop/Programming/OpenGL",
+    "file": "/home/mateo/Desktop/Programming/OpenGL/mplib/mplib.c",
+    "output": "/home/mateo/Desktop/Programming/OpenGL/mplib/mplib.o"
+  }
+]
