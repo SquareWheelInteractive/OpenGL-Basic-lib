@@ -20,16 +20,24 @@ typedef struct{
 } Texture;
 typedef struct{
     unsigned int vao;
-    unsigned int vbo;
-    unsigned int shader_program;
+    unsigned int vbo_id[2]; // array of vbo (one per vertex attrib (pos, tex_coords)) #just those two for now
     unsigned int vertex_count;
-    unsigned int indices_count;
-    Texture albedo;
+    float* vertices;
+    float* tex_coords;
+
+    unsigned int index_count;
+    unsigned int* indices;
+} MPMesh;
+typedef struct{
+    MPMesh mesh;
+    unsigned int shader_program;
     mat4s transform;
-} Model;
+    Texture albedo;
+} MPModel;
 
 
-Model mp_create_quad();
+MPMesh mp_create_quad();
+MPModel mp_load_model_from_mesh(MPMesh mesh);
 void mp_update_camera_3d(GLFWwindow* window, Camera3D* camera, float dt);
 
 //init- window related
@@ -49,4 +57,4 @@ void mp_begin_3d_mode(Camera3D* camera);
 char* mp_get_shader_content(const char* fileName);
 unsigned int mp_create_shader_program(const char* vert_shader_path, const char* frag_shader_path);
 Texture mp_load_texture(const char* texture_path);
-void mp_draw_model(Model model, Camera3D camera);
+void mp_draw_model(MPModel model, Camera3D camera);

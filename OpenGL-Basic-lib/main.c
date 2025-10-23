@@ -16,7 +16,7 @@ int main(){
 
     unsigned int shader = mp_create_shader_program("shaders/vert.glsl", "shaders/frag.glsl");
 
-    Model model = mp_create_quad();
+    MPModel model = mp_load_model_from_mesh(mp_create_quad());
     Texture m_tex = mp_load_texture("./default_brick.png");
     model.shader_program = shader;
     model.albedo = m_tex;

@@ -100,32 +100,39 @@ unsigned int mp_create_shader_program(const char *vert_shader_path, const char *
 
     return shader_prog;
 }
-Model mp_create_quad(){
+MPMesh mp_create_quad(){
     float positions[] = {
-         0.5f, 0.5f, 0.0f,    1.0f, 1.0f,
-         0.5f,-0.5f, 0.0f,    1.0f, 0.0f,
-        -0.5f,-0.5f, 0.0f,    0.0f, 0.0f,
-        -0.5f, 0.5f, 0.0f,    0.0f, 1.0f
+         0.5f, 0.5f, 0.0f,
+         0.5f,-0.5f, 0.0f,
+        -0.5f,-0.5f, 0.0f,
+        -0.5f, 0.5f, 0.0f
+    };
+    float uvs[] = {
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
     };
     int  indices[]={
         0, 1, 3,
         1, 2, 3  
     };
 
-    Model m = {0};
-    m.transform = glms_mat4_identity();
+    MPMesh m = {0};
     m.vertex_count = 4;
-    m.indices_count = 6;
+    m.index_count= 6;
     glad_glGenVertexArrays(1, &m.vao);
     glad_glBindVertexArray(m.vao);
 
-    glad_glGenBuffers(1, &m.vbo);
-    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glad_glGenBuffers(2, m.vbo_id);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_id[0]);
     glad_glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-
-    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(0);
-    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)12);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_id[1]);
+    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2* sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(1);
 
     unsigned int ebo;
@@ -138,6 +145,12 @@ Model mp_create_quad(){
     glad_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     return m;
+}
+MPModel mp_load_model_from_mesh(MPMesh mesh){
+    MPModel model;
+    model.transform = glms_mat4_identity();
+    model.mesh = mesh;
+    return model;
 }
 
 Texture mp_load_texture(const char *texture_path){
@@ -160,7 +173,7 @@ Texture mp_load_texture(const char *texture_path){
     glad_glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
-void mp_draw_model(Model model, Camera3D camera){
+void mp_draw_model(MPModel model, Camera3D camera){
     mat4s mvp; glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
 
     glad_glUseProgram(model.shader_program);
@@ -169,8 +182,8 @@ void mp_draw_model(Model model, Camera3D camera){
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);
     }
-    glad_glBindVertexArray(model.vao);
-    glad_glDrawElements(GL_TRIANGLES, model.indices_count, GL_UNSIGNED_INT, 0);
+    glad_glBindVertexArray(model.mesh.vao);
+    glad_glDrawElements(GL_TRIANGLES, model.mesh.index_count, GL_UNSIGNED_INT, 0);
     glad_glUseProgram(0);
 }
 

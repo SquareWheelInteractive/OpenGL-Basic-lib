@@ -1,5 +1,5 @@
 CXX := gcc
-CXXFLAGS := -Wall -I. -I./external
+CXXFLAGS := -Wall -I. -I./external -g
 LDFLAGS := -lglfw -lGL -lm -lX11
 
 SRC := $(wildcard *.c) \
