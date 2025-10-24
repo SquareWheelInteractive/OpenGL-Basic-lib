@@ -16,23 +16,24 @@ int main(){
 
     unsigned int shader = mp_create_shader_program("shaders/vert.glsl", "shaders/frag.glsl");
 
-    MPModel model = mp_load_model_from_mesh(mp_create_quad());
-    Texture m_tex = mp_load_texture("./default_brick.png");
-    model.shader_program = shader;
-    model.albedo = m_tex;
+    MPModel house = mp_load_model_from_mesh(mp_load_obj("medieval_house.obj"));
+    house.shader_program = shader;
+    Texture m_tex = mp_load_texture("./houseTexture.png");
+    house.albedo = m_tex;
 
     while (!mp_window_should_close(window)) {
         float dt = mp_get_frame_time();
-        mp_update_camera_3d(window, &cam, dt);
+        mp_update_camera_3d(window, &cam, 2, dt);
 
         mp_begin_drawing(window);
 
             mp_begin_3d_mode(&cam);
 
-            mp_draw_model(model, cam);
+            mp_draw_model(house, cam);
 
         mp_end_drawing(window);
     }
+    mp_unload_model(house);
     mp_terminate();
     return -1;
 }

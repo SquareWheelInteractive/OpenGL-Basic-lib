@@ -22,8 +22,10 @@ typedef struct{
     unsigned int vao;
     unsigned int vbo_id[2]; // array of vbo (one per vertex attrib (pos, tex_coords)) #just those two for now
     unsigned int vertex_count;
-    float* vertices;
+    float* positions;
+    unsigned int position_count;
     float* tex_coords;
+    unsigned int tex_coord_count;
 
     unsigned int index_count;
     unsigned int* indices;
@@ -38,7 +40,9 @@ typedef struct{
 
 MPMesh mp_create_quad();
 MPModel mp_load_model_from_mesh(MPMesh mesh);
-void mp_update_camera_3d(GLFWwindow* window, Camera3D* camera, float dt);
+void mp_update_camera_3d(GLFWwindow* window, Camera3D* camera, float move_speed, float dt);
+MPMesh mp_load_obj(const char* path);
+void mp_unload_model(MPModel model);
 
 //init- window related
 GLFWwindow* mp_init(int win_width, int win_height, const char* window_title);
