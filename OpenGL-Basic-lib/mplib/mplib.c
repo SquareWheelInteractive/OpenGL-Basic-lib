@@ -36,7 +36,9 @@ GLFWwindow* mp_init(int win_width, int win_height, const char* window_title){
     }
     glad_glViewport(0, 0, win_width, win_height);
 
-    glEnable(GL_DEPTH_TEST);
+    glad_glEnable(GL_DEPTH_TEST);
+    glad_glEnable(GL_CULL_FACE);
+    glad_glCullFace(GL_BACK);
 
     return window;
 }
@@ -131,13 +133,13 @@ MPMesh mp_create_quad(){
     glad_glGenVertexArrays(1, &m.vao);
     glad_glBindVertexArray(m.vao);
 
-    glad_glGenBuffers(2, m.vbo_id);
-    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_id[0]);
+    glad_glGenBuffers(2, m.vbo_ids);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_ids[0]);
     glad_glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
     glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(0);
 
-    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_id[1]);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_ids[1]);
     glad_glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
     glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2* sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(1);
@@ -160,57 +162,69 @@ MPModel mp_load_model_from_mesh(MPMesh mesh){
     return model;
 }
 MPMesh mp_load_obj(const char* path){
-    //////////////////
-    //TODO: model texture looking weird, something to do with indices, fix that
-    //////////////////
-    MPMesh my_mesh = {0};
+    MPMesh mesh_out = {0};
 
-    fastObjMesh* mesh = fast_obj_read(path);    
-    assert(mesh != NULL);
+    fastObjMesh* mesh = fast_obj_read(path);
+    assert(mesh && "Failed to read OBJ");
 
-    my_mesh.vertex_count = mesh->position_count;
+    unsigned int max_vertices = mesh->index_count;
 
-    my_mesh.position_count = mesh->position_count;
-    my_mesh.positions = malloc(mesh->position_count * 3 *sizeof(float));
-    memcpy(my_mesh.positions, mesh->positions, mesh->position_count * 3*sizeof(float));
+    mesh_out.positions = malloc(max_vertices * 3 * sizeof(float));
+    mesh_out.tex_coords= malloc(max_vertices * 2 * sizeof(float));
+    mesh_out.indices   = malloc(mesh->index_count * sizeof(unsigned int));
 
-    my_mesh.tex_coord_count = mesh->texcoord_count;
-    my_mesh.tex_coords = malloc(mesh->texcoord_count * 2 * sizeof(float));
-    memcpy(my_mesh.tex_coords, mesh->texcoords, mesh->texcoord_count * 2 * sizeof(float));
+    mesh_out.vertex_count = mesh->face_count * 3;
+    mesh_out.index_count  = mesh->index_count;
 
-    my_mesh.index_count = mesh->index_count;
-    my_mesh.indices = malloc(mesh->index_count * sizeof(unsigned int));
-    for (int i = 0; i < mesh->index_count; i++) {
+    for (unsigned int i = 0; i < mesh->index_count; i++) {
+        fastObjIndex idx = mesh->indices[i];
 
-        my_mesh.indices[i] = mesh->indices[i].p;
+        mesh_out.positions[i * 3 + 0] = mesh->positions[idx.p * 3 + 0];
+        mesh_out.positions[i * 3 + 1] = mesh->positions[idx.p * 3 + 1];
+        mesh_out.positions[i * 3 + 2] = mesh->positions[idx.p * 3 + 2];
+
+        if (idx.t < mesh->texcoord_count) {
+            mesh_out.tex_coords[i * 2 + 0] = mesh->texcoords[idx.t * 2 + 0];
+            mesh_out.tex_coords[i * 2 + 1] = mesh->texcoords[idx.t * 2 + 1];
+        } else {
+            mesh_out.tex_coords[i * 2 + 0] = 0.0f;
+            mesh_out.tex_coords[i * 2 + 1] = 0.0f;
+        }
+
+        mesh_out.indices[i] = i;
     }
 
     fast_obj_destroy(mesh);
 
-    glad_glGenVertexArrays(1, &my_mesh.vao);
-    glad_glBindVertexArray(my_mesh.vao);
+    glad_glGenVertexArrays(1, &mesh_out.vao);
+    glad_glBindVertexArray(mesh_out.vao);
 
-    glad_glGenBuffers(2, my_mesh.vbo_id);
-    glad_glBindBuffer(GL_ARRAY_BUFFER, my_mesh.vbo_id[0]);
-    glad_glBufferData(GL_ARRAY_BUFFER, my_mesh.position_count * 3 * sizeof(float), my_mesh.positions, GL_STATIC_DRAW);
-    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glad_glGenBuffers(2, mesh_out.vbo_ids);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[0]);
+    glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 3 * sizeof(float),
+                      mesh_out.positions, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glad_glEnableVertexAttribArray(0);
 
-    glad_glBindBuffer(GL_ARRAY_BUFFER, my_mesh.vbo_id[1]);
-    glad_glBufferData(GL_ARRAY_BUFFER, my_mesh.tex_coord_count * 2 * sizeof(float), my_mesh.tex_coords, GL_STATIC_DRAW);
-    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2* sizeof(float), (void*)0);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[1]);
+    glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 2 * sizeof(float),
+                      mesh_out.tex_coords, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glad_glEnableVertexAttribArray(1);
 
     unsigned int ebo;
     glad_glGenBuffers(1, &ebo);
     glad_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glad_glBufferData(GL_ELEMENT_ARRAY_BUFFER, my_mesh.index_count* sizeof(unsigned int), my_mesh.indices, GL_STATIC_DRAW);
+    glad_glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                      mesh_out.index_count * sizeof(unsigned int),
+                      mesh_out.indices, GL_STATIC_DRAW);
 
     glad_glBindVertexArray(0);
     glad_glBindBuffer(GL_ARRAY_BUFFER, 0);
     glad_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    return my_mesh;
+    return mesh_out;
 }
 
 Texture mp_load_texture(const char *texture_path){
@@ -250,6 +264,9 @@ void mp_draw_model(MPModel model, Camera3D camera){
 void mp_begin_3d_mode(Camera3D* camera){
     camera->cam_matrix = glms_lookat(camera->position, camera->target, camera->up);
     camera->proj_matrix = glms_perspective(camera->fovy * DEG2RAD, camera->aspect, 0.05f, 100.0f);
+
+    // float ar = 5;
+    // camera->proj_matrix = glms_ortho(-1*camera->aspect * ar, 1*camera->aspect * ar,-1 * ar, 1 *ar, 0.01f, 100);
 }
 
 double lastX = 0.0, lastY = 0.0;

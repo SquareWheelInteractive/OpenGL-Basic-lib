@@ -1,7 +1,7 @@
 #include "mplib/mplib.h"
 
-#define WIN_WIDTH 800
-#define WIN_HEIGHT 600
+#define WIN_WIDTH 700
+#define WIN_HEIGHT 500
 
 int main(){
     GLFWwindow* window = mp_init(WIN_WIDTH, WIN_HEIGHT, "pingo");
@@ -11,7 +11,7 @@ int main(){
     cam.position = (vec3s){.x = 0, .y = 1.0f, .z = 2};
     cam.target = (vec3s){.x = 0, .y = 0, .z = 0};
     cam.up= (vec3s){.x = 0, .y = 1, .z = 0};
-    cam.fovy = 65;
+    cam.fovy = 60;
     cam.aspect = (float)WIN_WIDTH/WIN_HEIGHT;
 
     unsigned int shader = mp_create_shader_program("shaders/vert.glsl", "shaders/frag.glsl");
@@ -23,7 +23,7 @@ int main(){
 
     while (!mp_window_should_close(window)) {
         float dt = mp_get_frame_time();
-        mp_update_camera_3d(window, &cam, 2, dt);
+        mp_update_camera_3d(window, &cam, 4, dt);
 
         mp_begin_drawing(window);
 
@@ -33,7 +33,9 @@ int main(){
 
         mp_end_drawing(window);
     }
+
     mp_unload_model(house);
+
     mp_terminate();
     return -1;
 }

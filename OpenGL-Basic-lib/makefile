@@ -8,7 +8,7 @@ SRC := $(wildcard *.c) \
 
 OBJ := $(SRC:.c=.o)
 
-TARGET := app
+TARGET := app.out
 
 all: $(TARGET)
 
