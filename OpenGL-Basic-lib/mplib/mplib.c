@@ -1,4 +1,5 @@
 #include "mplib/mplib.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +10,8 @@
 #include <GLFW/glfw3.h>
 #include <math.h>
 
-#define DEG2RAD 0.0174532f
-#define RAD2DEG 57.295779f
+#define FAST_OBJ_IMPLEMENTATION
+#include "external/fast_obj.h"
 
 GLFWwindow* mp_init(int win_width, int win_height, const char* window_title){
     if(!glfwInit()){
@@ -32,6 +33,10 @@ GLFWwindow* mp_init(int win_width, int win_height, const char* window_title){
     }
     glad_glViewport(0, 0, win_width, win_height);
 
+    glad_glEnable(GL_DEPTH_TEST);
+    glad_glEnable(GL_CULL_FACE);
+    glad_glCullFace(GL_BACK);
+
     return window;
 }
 bool mp_window_should_close(GLFWwindow* window){
@@ -42,9 +47,9 @@ bool mp_window_should_close(GLFWwindow* window){
 
     return glfwWindowShouldClose(window);
 }
-void mp_begin_drawing(GLFWwindow* window){
-    glad_glClearColor(0.4f,0.35f,0.5f,1);
-    glad_glClear(GL_COLOR_BUFFER_BIT);
+void mp_begin_drawing(GLFWwindow* window, vec3s clear_color){
+    glad_glClearColor(clear_color.x, clear_color.y, clear_color.z,1.0f);
+    glad_glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 }
 void mp_end_drawing(GLFWwindow* window){
     glfwPollEvents();
@@ -100,32 +105,39 @@ unsigned int mp_create_shader_program(const char *vert_shader_path, const char *
 
     return shader_prog;
 }
-Model mp_create_quad(){
+MPMesh mp_create_quad(){
     float positions[] = {
-         0.5f, 0.5f, 0.0f,    1.0f, 1.0f,
-         0.5f,-0.5f, 0.0f,    1.0f, 0.0f,
-        -0.5f,-0.5f, 0.0f,    0.0f, 0.0f,
-        -0.5f, 0.5f, 0.0f,    0.0f, 1.0f
+         0.5f, 0.5f, 0.0f,
+         0.5f,-0.5f, 0.0f,
+        -0.5f,-0.5f, 0.0f,
+        -0.5f, 0.5f, 0.0f
+    };
+    float uvs[] = {
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
     };
     int  indices[]={
         0, 1, 3,
         1, 2, 3  
     };
 
-    Model m = {0};
-    m.transform = glms_mat4_identity();
+    MPMesh m = {0};
     m.vertex_count = 4;
-    m.indices_count = 6;
+    m.index_count= 6;
     glad_glGenVertexArrays(1, &m.vao);
     glad_glBindVertexArray(m.vao);
 
-    glad_glGenBuffers(1, &m.vbo);
-    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
+    glad_glGenBuffers(2, m.vbo_ids);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_ids[0]);
     glad_glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-
-    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(0);
-    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)12);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, m.vbo_ids[1]);
+    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2* sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(1);
 
     unsigned int ebo;
@@ -139,6 +151,77 @@ Model mp_create_quad(){
 
     return m;
 }
+MPModel mp_load_model_from_mesh(MPMesh mesh){
+    MPModel model = {0};
+    model.transform = glms_mat4_identity();
+    model.mesh = mesh;
+    return model;
+}
+MPMesh mp_load_obj(const char* path){
+    MPMesh mesh_out = {0};
+
+    fastObjMesh* mesh = fast_obj_read(path);
+    assert(mesh && "Failed to read OBJ");
+
+    unsigned int max_vertices = mesh->face_count * 3; // "face_count" = number of triangles
+
+    mesh_out.positions = malloc(max_vertices * 3 * sizeof(float));
+    mesh_out.tex_coords= malloc(max_vertices * 2 * sizeof(float));
+    mesh_out.indices   = malloc(mesh->index_count * sizeof(unsigned int));
+
+    mesh_out.vertex_count = max_vertices;
+    mesh_out.index_count  = mesh->index_count;
+
+    for (unsigned int i = 0; i < mesh->index_count; i++) {
+        fastObjIndex idx = mesh->indices[i];
+
+        mesh_out.positions[i * 3 + 0] = mesh->positions[idx.p * 3 + 0];
+        mesh_out.positions[i * 3 + 1] = mesh->positions[idx.p * 3 + 1];
+        mesh_out.positions[i * 3 + 2] = mesh->positions[idx.p * 3 + 2];
+
+        if (idx.t < mesh->texcoord_count) {
+            mesh_out.tex_coords[i * 2 + 0] = mesh->texcoords[idx.t * 2 + 0];
+            mesh_out.tex_coords[i * 2 + 1] = mesh->texcoords[idx.t * 2 + 1];
+        } else {
+            mesh_out.tex_coords[i * 2 + 0] = 0.0f;
+            mesh_out.tex_coords[i * 2 + 1] = 0.0f;
+        }
+
+        mesh_out.indices[i] = i;
+    }
+
+    fast_obj_destroy(mesh);
+
+    glad_glGenVertexArrays(1, &mesh_out.vao);
+    glad_glBindVertexArray(mesh_out.vao);
+
+    glad_glGenBuffers(2, mesh_out.vbo_ids);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[0]);
+    glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 3 * sizeof(float),
+                      mesh_out.positions, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glad_glEnableVertexAttribArray(0);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[1]);
+    glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 2 * sizeof(float),
+                      mesh_out.tex_coords, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glad_glEnableVertexAttribArray(1);
+
+    unsigned int ebo;
+    glad_glGenBuffers(1, &ebo);
+    glad_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glad_glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                      mesh_out.index_count * sizeof(unsigned int),
+                      mesh_out.indices, GL_STATIC_DRAW);
+
+    glad_glBindVertexArray(0);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glad_glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    return mesh_out;
+}
 
 Texture mp_load_texture(const char *texture_path){
     Texture tex = {0};
@@ -150,33 +233,43 @@ Texture mp_load_texture(const char *texture_path){
         glad_glBindTexture(GL_TEXTURE_2D, tex.id);
         glad_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glad_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glad_glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex.width, tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glad_glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex.width, tex.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glad_glGenerateMipmap(GL_TEXTURE_2D);
     }
     else{
         printf("TEXTURE: fail to load, '%s' doesn't exist \n", texture_path);
+        glad_glBindTexture(GL_TEXTURE_2D, 0);
+        return  tex;;
     }
     stbi_image_free(data);
     glad_glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
-void mp_draw_model(Model model, Camera3D camera){
+void mp_draw_model(MPModel model, Camera3D camera){
     mat4s mvp; glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
 
     glad_glUseProgram(model.shader_program);
+
     int mvp_loc = glad_glGetUniformLocation(model.shader_program, "mvp");
     glad_glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, (const GLfloat*)mvp.raw);
+
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);
     }
-    glad_glBindVertexArray(model.vao);
-    glad_glDrawElements(GL_TRIANGLES, model.indices_count, GL_UNSIGNED_INT, 0);
+    glad_glBindVertexArray(model.mesh.vao);
+    glad_glDrawElements(GL_TRIANGLES, model.mesh.index_count, GL_UNSIGNED_INT, 0);
+    // unbind texture buffer, vao and shader program
+    glad_glBindTexture(GL_TEXTURE_2D, 0);
+    glad_glBindVertexArray(0);
     glad_glUseProgram(0);
 }
 
 void mp_begin_3d_mode(Camera3D* camera){
     camera->cam_matrix = glms_lookat(camera->position, camera->target, camera->up);
     camera->proj_matrix = glms_perspective(camera->fovy * DEG2RAD, camera->aspect, 0.05f, 100.0f);
+
+    // float ar = 5;
+    // camera->proj_matrix = glms_ortho(-1*camera->aspect * ar, 1*camera->aspect * ar,-1 * ar, 1 *ar, 0.01f, 100);
 }
 
 double lastX = 0.0, lastY = 0.0;
@@ -201,8 +294,8 @@ vec2s mp_get_mouse_delta(GLFWwindow *window) {
     return delta;
 }
 
-float yaw = 0, pitch = 0;
-void mp_update_camera_3d(GLFWwindow *window, Camera3D *camera, float dt){
+float yaw = -90, pitch = 0;
+void mp_update_camera_3d(GLFWwindow *window, Camera3D *camera, float move_speed, float dt){
     vec2s mouse_delta = mp_get_mouse_delta(window);
     yaw += mouse_delta.x * 0.2f;
     pitch += -mouse_delta.y * 0.2f;
@@ -226,9 +319,9 @@ void mp_update_camera_3d(GLFWwindow *window, Camera3D *camera, float dt){
     if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) dir = glms_vec3_sub(dir, right);
     if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) dir = glms_vec3_add(dir, camera->up);
 
-    if(glms_vec3_norm(dir) > 1) dir = glms_vec3_normalize(dir);
+    dir = glms_vec3_normalize(dir);
 
-    camera->position = glms_vec3_add(camera->position, glms_vec3_scale(dir, dt));
+    camera->position = glms_vec3_add(camera->position, glms_vec3_scale(dir, move_speed * dt));
     camera->target = glms_vec3_add(camera->position, tar);
 }
 
@@ -239,4 +332,10 @@ float mp_get_frame_time(){
     float delta =  curr_time - last_time;
     last_time = curr_time;;
     return delta;
+}
+
+void mp_unload_model(MPModel model){
+    free(model.mesh.indices);
+    free(model.mesh.positions);
+    free(model.mesh.tex_coords);
 }

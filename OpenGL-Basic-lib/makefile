@@ -1,5 +1,5 @@
 CXX := gcc
-CXXFLAGS := -Wall -I. -I./external
+CXXFLAGS := -Wall -I. -I./external -g
 LDFLAGS := -lglfw -lGL -lm -lX11
 
 SRC := $(wildcard *.c) \
@@ -8,7 +8,7 @@ SRC := $(wildcard *.c) \
 
 OBJ := $(SRC:.c=.o)
 
-TARGET := app
+TARGET := app.out
 
 all: $(TARGET)
 
