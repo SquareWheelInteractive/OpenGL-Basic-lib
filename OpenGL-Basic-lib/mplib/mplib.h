@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include "cglm/struct.h"
 
+#define PI 3.1415926f
+#define DEG2RAD 0.0174532f
+#define RAD2DEG 57.295779f
+
 typedef struct{
     vec3s position;
     vec3s target;
@@ -53,7 +57,7 @@ vec2s mp_get_mouse_delta(GLFWwindow *window);
 float mp_get_frame_time();
 
 //drawing related
-void mp_begin_drawing(GLFWwindow* window);
+void mp_begin_drawing(GLFWwindow* window, vec3s clear_color);
 void mp_end_drawing(GLFWwindow* window);
 void mp_begin_3d_mode(Camera3D* camera);
 

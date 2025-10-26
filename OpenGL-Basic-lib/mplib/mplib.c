@@ -13,9 +13,6 @@
 #define FAST_OBJ_IMPLEMENTATION
 #include "external/fast_obj.h"
 
-#define DEG2RAD 0.0174532f
-#define RAD2DEG 57.295779f
-
 GLFWwindow* mp_init(int win_width, int win_height, const char* window_title){
     if(!glfwInit()){
         printf("glfw window not initialized\n");
@@ -50,10 +47,9 @@ bool mp_window_should_close(GLFWwindow* window){
 
     return glfwWindowShouldClose(window);
 }
-void mp_begin_drawing(GLFWwindow* window){
-    glad_glClearColor(0.4f,0.35f,0.5f,1);
+void mp_begin_drawing(GLFWwindow* window, vec3s clear_color){
+    glad_glClearColor(clear_color.x, clear_color.y, clear_color.z,1.0f);
     glad_glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-
 }
 void mp_end_drawing(GLFWwindow* window){
     glfwPollEvents();
@@ -156,7 +152,7 @@ MPMesh mp_create_quad(){
     return m;
 }
 MPModel mp_load_model_from_mesh(MPMesh mesh){
-    MPModel model;
+    MPModel model = {0};
     model.transform = glms_mat4_identity();
     model.mesh = mesh;
     return model;
@@ -167,13 +163,13 @@ MPMesh mp_load_obj(const char* path){
     fastObjMesh* mesh = fast_obj_read(path);
     assert(mesh && "Failed to read OBJ");
 
-    unsigned int max_vertices = mesh->index_count;
+    unsigned int max_vertices = mesh->face_count * 3; // "face_count" = number of triangles
 
     mesh_out.positions = malloc(max_vertices * 3 * sizeof(float));
     mesh_out.tex_coords= malloc(max_vertices * 2 * sizeof(float));
     mesh_out.indices   = malloc(mesh->index_count * sizeof(unsigned int));
 
-    mesh_out.vertex_count = mesh->face_count * 3;
+    mesh_out.vertex_count = max_vertices;
     mesh_out.index_count  = mesh->index_count;
 
     for (unsigned int i = 0; i < mesh->index_count; i++) {
@@ -242,6 +238,8 @@ Texture mp_load_texture(const char *texture_path){
     }
     else{
         printf("TEXTURE: fail to load, '%s' doesn't exist \n", texture_path);
+        glad_glBindTexture(GL_TEXTURE_2D, 0);
+        return  tex;;
     }
     stbi_image_free(data);
     glad_glBindTexture(GL_TEXTURE_2D, 0);
@@ -251,13 +249,18 @@ void mp_draw_model(MPModel model, Camera3D camera){
     mat4s mvp; glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
 
     glad_glUseProgram(model.shader_program);
+
     int mvp_loc = glad_glGetUniformLocation(model.shader_program, "mvp");
     glad_glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, (const GLfloat*)mvp.raw);
+
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);
     }
     glad_glBindVertexArray(model.mesh.vao);
     glad_glDrawElements(GL_TRIANGLES, model.mesh.index_count, GL_UNSIGNED_INT, 0);
+    // unbind texture buffer, vao and shader program
+    glad_glBindTexture(GL_TEXTURE_2D, 0);
+    glad_glBindVertexArray(0);
     glad_glUseProgram(0);
 }
 
