@@ -47,8 +47,8 @@ bool mp_window_should_close(GLFWwindow* window){
 
     return glfwWindowShouldClose(window);
 }
-void mp_begin_drawing(GLFWwindow* window, vec3s clear_color){
-    glad_glClearColor(clear_color.x, clear_color.y, clear_color.z,1.0f);
+void mp_begin_drawing(GLFWwindow* window, Color clear_color){
+    glad_glClearColor(clear_color.r, clear_color.g, clear_color.b,1.0f);
     glad_glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 }
 void mp_end_drawing(GLFWwindow* window){
@@ -245,7 +245,7 @@ Texture mp_load_texture(const char *texture_path){
     glad_glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
-void mp_draw_model(MPModel model, Camera3D camera, vec3s color){
+void mp_draw_model(MPModel model, Camera3D camera, Color color){
     mat4s mvp = glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
 
     glad_glUseProgram(model.shader_program);
@@ -253,7 +253,7 @@ void mp_draw_model(MPModel model, Camera3D camera, vec3s color){
     int mvp_loc = glad_glGetUniformLocation(model.shader_program, "mvp");
     int color_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
     glad_glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, (const GLfloat*)mvp.raw);
-    glad_glUniform3f(color_loc, color.r, color.g, color.b);
+    glad_glUniform4f(color_loc, color.r, color.g, color.b, color.a);
 
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);
@@ -261,8 +261,8 @@ void mp_draw_model(MPModel model, Camera3D camera, vec3s color){
     glad_glBindVertexArray(model.mesh.vao);
     glad_glDrawElements(GL_TRIANGLES, model.mesh.index_count, GL_UNSIGNED_INT, 0);
     // unbind texture buffer, vao and shader program
-    glad_glBindTexture(GL_TEXTURE_2D, 0);
     glad_glBindVertexArray(0);
+    glad_glBindTexture(GL_TEXTURE_2D, 0);
     glad_glUseProgram(0);
 }
 

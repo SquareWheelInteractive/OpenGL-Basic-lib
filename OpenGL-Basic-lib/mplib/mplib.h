@@ -9,9 +9,14 @@
 #define RAD2DEG 57.295779f
 
 // Colors
-#define BLACK (vec3s){.x=0,.y=0,.z=0}
-#define MAGENTA (vec3s){.x=0.4f,.y=0.35f,.z=0.55f}
-#define DARK_GRAY (vec3s){.x=0.3f,.y=0.3f,.z=0.3f}
+#define WHITE (Color){1,1,1,1}
+#define BLACK (Color){0,0,0,1}
+#define MAGENTA (Color){0.4f, 0.35f, 0.55f, 1.0f}
+#define DARK_GRAY (Color){0.3f, 0.3f, 0.3f, 1.0f}
+
+typedef struct{
+    float r,g,b,a;
+} Color;
 
 typedef struct{
     vec3s position;
@@ -62,7 +67,7 @@ vec2s mp_get_mouse_delta(GLFWwindow *window);
 float mp_get_frame_time();
 
 //drawing related
-void mp_begin_drawing(GLFWwindow* window, vec3s clear_color);
+void mp_begin_drawing(GLFWwindow* window, Color clear_color);
 void mp_end_drawing(GLFWwindow* window);
 void mp_begin_3d_mode(Camera3D* camera);
 
@@ -70,4 +75,4 @@ void mp_begin_3d_mode(Camera3D* camera);
 char* mp_get_shader_content(const char* fileName);
 unsigned int mp_create_shader_program(const char* vert_shader_path, const char* frag_shader_path);
 Texture mp_load_texture(const char* texture_path);
-void mp_draw_model(MPModel model, Camera3D camera, vec3s color);
+void mp_draw_model(MPModel model, Camera3D camera, Color color);
