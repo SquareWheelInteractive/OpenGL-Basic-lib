@@ -8,6 +8,11 @@
 #define DEG2RAD 0.0174532f
 #define RAD2DEG 57.295779f
 
+// Colors
+#define BLACK (vec3s){.x=0,.y=0,.z=0}
+#define MAGENTA (vec3s){.x=0.4f,.y=0.35f,.z=0.55f}
+#define DARK_GRAY (vec3s){.x=0.3f,.y=0.3f,.z=0.3f}
+
 typedef struct{
     vec3s position;
     vec3s target;
@@ -65,4 +70,4 @@ void mp_begin_3d_mode(Camera3D* camera);
 char* mp_get_shader_content(const char* fileName);
 unsigned int mp_create_shader_program(const char* vert_shader_path, const char* frag_shader_path);
 Texture mp_load_texture(const char* texture_path);
-void mp_draw_model(MPModel model, Camera3D camera);
+void mp_draw_model(MPModel model, Camera3D camera, vec3s color);

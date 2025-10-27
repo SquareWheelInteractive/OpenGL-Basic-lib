@@ -245,13 +245,15 @@ Texture mp_load_texture(const char *texture_path){
     glad_glBindTexture(GL_TEXTURE_2D, 0);
     return tex;
 }
-void mp_draw_model(MPModel model, Camera3D camera){
-    mat4s mvp; glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
+void mp_draw_model(MPModel model, Camera3D camera, vec3s color){
+    mat4s mvp = glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
 
     glad_glUseProgram(model.shader_program);
 
     int mvp_loc = glad_glGetUniformLocation(model.shader_program, "mvp");
+    int color_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
     glad_glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, (const GLfloat*)mvp.raw);
+    glad_glUniform3f(color_loc, color.r, color.g, color.b);
 
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);

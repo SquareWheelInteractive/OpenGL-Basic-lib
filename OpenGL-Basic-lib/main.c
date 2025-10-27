@@ -37,12 +37,12 @@ int main(){
         float dt = mp_get_frame_time();
         mp_update_camera_3d(window, &cam, 4, dt);
 
-        mp_begin_drawing(window, (vec3s){.r = 0.43f, 0.53f, 0.75f});
+        mp_begin_drawing(window, DARK_GRAY);
 
             mp_begin_3d_mode(&cam);
 
-            mp_draw_model(house, cam);
-            mp_draw_model(ground, cam);
+            mp_draw_model(house, cam, DARK_GRAY);
+            mp_draw_model(ground, cam, DARK_GRAY);
 
         mp_end_drawing(window);
     }
