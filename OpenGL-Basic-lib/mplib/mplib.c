@@ -167,6 +167,7 @@ MPMesh mp_load_obj(const char* path){
 
     mesh_out.positions = malloc(max_vertices * 3 * sizeof(float));
     mesh_out.tex_coords= malloc(max_vertices * 2 * sizeof(float));
+    mesh_out.normals   = malloc(max_vertices * 3 * sizeof(float));
     mesh_out.indices   = malloc(mesh->index_count * sizeof(unsigned int));
 
     mesh_out.vertex_count = max_vertices;
@@ -187,6 +188,16 @@ MPMesh mp_load_obj(const char* path){
             mesh_out.tex_coords[i * 2 + 1] = 0.0f;
         }
 
+        if (idx.n < mesh->normal_count) {
+            mesh_out.normals[i * 3 + 0] = mesh->normals[idx.n * 3 + 0];
+            mesh_out.normals[i * 3 + 1] = mesh->normals[idx.n * 3 + 1];
+            mesh_out.normals[i * 3 + 2] = mesh->normals[idx.n * 3 + 2];
+        } else {
+            mesh_out.normals[i * 3 + 0] = 0.0f;
+            mesh_out.normals[i * 3 + 1] = 0.0f;
+            mesh_out.normals[i * 3 + 2] = 0.0f;
+        }
+
         mesh_out.indices[i] = i;
     }
 
@@ -195,19 +206,25 @@ MPMesh mp_load_obj(const char* path){
     glad_glGenVertexArrays(1, &mesh_out.vao);
     glad_glBindVertexArray(mesh_out.vao);
 
-    glad_glGenBuffers(2, mesh_out.vbo_ids);
+    glad_glGenBuffers(3, mesh_out.vbo_ids);
 
     glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[0]);
     glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 3 * sizeof(float),
                       mesh_out.positions, GL_STATIC_DRAW);
-    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(0);
 
     glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[1]);
     glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 2 * sizeof(float),
                       mesh_out.tex_coords, GL_STATIC_DRAW);
-    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glad_glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), (void*)0);
     glad_glEnableVertexAttribArray(1);
+
+    glad_glBindBuffer(GL_ARRAY_BUFFER, mesh_out.vbo_ids[2]);
+    glad_glBufferData(GL_ARRAY_BUFFER, mesh_out.vertex_count * 3* sizeof(float),
+                      mesh_out.normals, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
+    glad_glEnableVertexAttribArray(2);
 
     unsigned int ebo;
     glad_glGenBuffers(1, &ebo);
@@ -246,14 +263,16 @@ Texture mp_load_texture(const char *texture_path){
     return tex;
 }
 void mp_draw_model(MPModel model, Camera3D camera, Color color){
-    mat4s mvp = glms_mat4_mul(camera.proj_matrix, glms_mat4_mul(camera.cam_matrix, model.transform));
-
     glad_glUseProgram(model.shader_program);
 
-    int mvp_loc = glad_glGetUniformLocation(model.shader_program, "mvp");
-    int color_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
-    glad_glUniformMatrix4fv(mvp_loc, 1, GL_FALSE, (const GLfloat*)mvp.raw);
-    glad_glUniform4f(color_loc, color.r, color.g, color.b, color.a);
+    int model_loc = glad_glGetUniformLocation(model.shader_program, "model");
+    int view_loc  = glad_glGetUniformLocation(model.shader_program, "view");
+    int proj_loc  = glad_glGetUniformLocation(model.shader_program, "projection");
+    int ambient_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
+    glad_glUniformMatrix4fv(model_loc,1, GL_FALSE, (const float*)model.transform.raw);
+    glad_glUniformMatrix4fv(view_loc, 1, GL_FALSE, (const float*)camera.cam_matrix.raw);
+    glad_glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (const float*)camera.proj_matrix.raw);
+    glad_glUniform4f(ambient_loc, color.r, color.g, color.b, color.a);
 
     if(model.albedo.id > 0){
         glad_glBindTexture(GL_TEXTURE_2D, model.albedo.id);
@@ -339,5 +358,6 @@ float mp_get_frame_time(){
 void mp_unload_model(MPModel model){
     free(model.mesh.indices);
     free(model.mesh.positions);
+    free(model.mesh.normals);
     free(model.mesh.tex_coords);
 }

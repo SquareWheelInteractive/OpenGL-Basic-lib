@@ -34,12 +34,11 @@ typedef struct{
 } Texture;
 typedef struct{
     unsigned int vao;
-    unsigned int vbo_ids[2]; // array of vbo (one per vertex attrib (pos, tex_coords)) #just those two for now
+    unsigned int vbo_ids[3]; // array of vbo (one per vertex attrib (pos, tex_coords and normals))
     unsigned int vertex_count;
     float* positions;
-    unsigned int position_count;
     float* tex_coords;
-    unsigned int tex_coord_count;
+    float* normals;
 
     unsigned int index_count;
     unsigned int* indices;
