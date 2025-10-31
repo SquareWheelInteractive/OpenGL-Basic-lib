@@ -5,6 +5,7 @@ LDFLAGS := -lglfw -lGL -lm -lX11
 SRC := $(wildcard *.c) \
 		glad/glad.c \
 		mplib/mplib.c \
+		mplib/mplights.c \
 
 OBJ := $(SRC:.c=.o)
 

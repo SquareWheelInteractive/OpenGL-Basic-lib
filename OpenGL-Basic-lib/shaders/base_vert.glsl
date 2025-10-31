@@ -11,7 +11,8 @@ uniform mat4 view;
 uniform mat4 projection;
 
 void main(){
+    uv = v_uv;
+
     mat4 mvp = projection * view * model;
     gl_Position = mvp * vec4(v_pos, 1.0f);
-    uv = v_uv;
 }

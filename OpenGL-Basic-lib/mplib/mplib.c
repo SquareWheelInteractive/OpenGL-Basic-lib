@@ -81,7 +81,7 @@ char* mp_get_shader_content(const char* fileName){
     return shaderContent;
 }
 
-unsigned int mp_create_shader_program(const char *vert_shader_path, const char *frag_shader_path){
+unsigned int mp_create_shader(const char *vert_shader_path, const char *frag_shader_path){
     const char* vert = mp_get_shader_content(vert_shader_path);
     unsigned int vert_shader = glad_glCreateShader(GL_VERTEX_SHADER);
     glad_glShaderSource(vert_shader, 1, &vert, NULL);
@@ -99,9 +99,9 @@ unsigned int mp_create_shader_program(const char *vert_shader_path, const char *
     glad_glDeleteShader(vert_shader);
     glad_glDeleteShader(frag_shader);
 
-    glad_glUseProgram(0);
     free((void*)vert);
     free((void*)frag);
+    glad_glUseProgram(0);
 
     return shader_prog;
 }
@@ -265,9 +265,9 @@ Texture mp_load_texture(const char *texture_path){
 void mp_draw_model(MPModel model, Camera3D camera, Color color){
     glad_glUseProgram(model.shader_program);
 
-    int model_loc = glad_glGetUniformLocation(model.shader_program, "model");
-    int view_loc  = glad_glGetUniformLocation(model.shader_program, "view");
-    int proj_loc  = glad_glGetUniformLocation(model.shader_program, "projection");
+    int model_loc   = glad_glGetUniformLocation(model.shader_program, "model");
+    int view_loc    = glad_glGetUniformLocation(model.shader_program, "view");
+    int proj_loc    = glad_glGetUniformLocation(model.shader_program, "projection");
     int ambient_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
     glad_glUniformMatrix4fv(model_loc,1, GL_FALSE, (const float*)model.transform.raw);
     glad_glUniformMatrix4fv(view_loc, 1, GL_FALSE, (const float*)camera.cam_matrix.raw);
@@ -300,10 +300,11 @@ vec2s mp_get_mouse_delta(GLFWwindow *window) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
-    if (firstMouse) {
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) && firstMouse) {
         lastX = xpos;
         lastY = ypos;
         firstMouse = 0;
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
     deltaX = xpos - lastX;
     deltaY = ypos - lastY;
@@ -360,4 +361,13 @@ void mp_unload_model(MPModel model){
     free(model.mesh.positions);
     free(model.mesh.normals);
     free(model.mesh.tex_coords);
+}
+
+char* mp_format_text(const char* fmt, ...) {
+    static char buffer[128];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    return buffer;
 }
