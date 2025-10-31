@@ -12,7 +12,7 @@
 #define WHITE (Color){1,1,1,1}
 #define BLACK (Color){0,0,0,1}
 #define MAGENTA (Color){0.4f, 0.35f, 0.55f, 1.0f}
-#define DARK_GRAY (Color){0.3f, 0.3f, 0.3f, 1.0f}
+#define DARK_GRAY (Color){0.25f, 0.25f, 0.25f, 1.0f}
 
 typedef struct{
     float r,g,b,a;
@@ -51,27 +51,28 @@ typedef struct{
 } MPModel;
 
 
-MPMesh mp_create_quad();
-MPModel mp_load_model_from_mesh(MPMesh mesh);
 void mp_update_camera_3d(GLFWwindow* window, Camera3D* camera, float move_speed, float dt);
-MPMesh mp_load_obj(const char* path);
-void mp_unload_model(MPModel model);
+void mp_begin_drawing(GLFWwindow* window, Color clear_color);
+void mp_end_drawing(GLFWwindow* window);
+void mp_begin_3d_mode(Camera3D* camera);
+char* mp_get_shader_content(const char* fileName);
+unsigned int mp_create_shader(const char* vert_shader_path, const char* frag_shader_path);
+vec2s mp_get_mouse_delta(GLFWwindow *window);
+float mp_get_frame_time();
 
 //init- window related
 GLFWwindow* mp_init(int win_width, int win_height, const char* window_title);
 bool mp_window_should_close(GLFWwindow* window);
 void mp_terminate();
 
-vec2s mp_get_mouse_delta(GLFWwindow *window);
-float mp_get_frame_time();
-
-//drawing related
-void mp_begin_drawing(GLFWwindow* window, Color clear_color);
-void mp_end_drawing(GLFWwindow* window);
-void mp_begin_3d_mode(Camera3D* camera);
-
-//model related
-char* mp_get_shader_content(const char* fileName);
-unsigned int mp_create_shader_program(const char* vert_shader_path, const char* frag_shader_path);
-Texture mp_load_texture(const char* texture_path);
+// model related
+MPMesh mp_create_quad();
+MPModel mp_load_model_from_mesh(MPMesh mesh);
+MPMesh mp_load_obj(const char* path);
+void mp_unload_model(MPModel model);
 void mp_draw_model(MPModel model, Camera3D camera, Color color);
+
+// texture related
+Texture mp_load_texture(const char* texture_path);
+
+char* mp_format_text(const char* fmt, ...);

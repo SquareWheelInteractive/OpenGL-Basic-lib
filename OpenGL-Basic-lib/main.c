@@ -1,13 +1,14 @@
 #include "mplib/mplib.h"
 #include "mplib/mpgl.h"
 #include "cglm/struct.h"
+#include <GLFW/glfw3.h>
+#include "mplib/mplights.h"
 
-#define WIN_WIDTH 700
-#define WIN_HEIGHT 500
+#define WIN_WIDTH 1000
+#define WIN_HEIGHT 800
 
 int main(){
     GLFWwindow* window = mp_init(WIN_WIDTH, WIN_HEIGHT, "mplib");
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     Camera3D cam;
     cam.position = (vec3s){.x = 0, .y = 1.0f, .z = 2};
@@ -16,7 +17,7 @@ int main(){
     cam.fovy = 60;
     cam.aspect = (float)WIN_WIDTH/WIN_HEIGHT;
 
-    unsigned int shader = mp_create_shader_program("shaders/vert.glsl", "shaders/frag.glsl");
+    unsigned int shader = mp_create_shader("shaders/lighting_vert.glsl", "shaders/lighting_frag.glsl");
 
     MPModel house = mp_load_model_from_mesh(mp_load_obj("./resources/medieval_house.obj"));
     house.shader_program = shader;
@@ -33,15 +34,33 @@ int main(){
     Texture grass_tex = mp_load_texture("./resources/grass.png");
     ground.albedo = grass_tex;
 
+    Light lights[MAX_LIGHTS];
+    lights[0]= mp_create_light((vec3s){.x=4, .y=1, .z= 0}, (Color){1, 0, 0, 1.0f}, 8, shader);
+    lights[1]= mp_create_light((vec3s){.x=-4, .y=1, .z=0}, (Color){0, 1, 0, 1.0f}, 8, shader);
+    lights[2]= mp_create_light((vec3s){.x=0, .y=1, .z=4}, (Color){0, 0, 1, 1.0f}, 8, shader);
+    lights[3]= mp_create_light((vec3s){.x=0, .y=1, .z=-4}, (Color){1, 1, 0, 1.0f}, 8, shader);
+
     while (!mp_window_should_close(window)) {
         float dt = mp_get_frame_time();
         mp_update_camera_3d(window, &cam, 4, dt);
 
-        mp_begin_drawing(window, DARK_GRAY);
+        for (int i = 0; i < MAX_LIGHTS; i++) {
+            vec4s pos = (vec4s){.x = lights[i].position.x,
+                                .y = lights[i].position.y,
+                                .z = lights[i].position.z,
+                                1.0f};
+            pos = glms_mat4_mulv(glms_rotate_y(glms_mat4_identity(), 50 * DEG2RAD * dt), pos);
+            lights[i].position.x = pos.x;
+            lights[i].position.y = pos.y;
+            lights[i].position.z = pos.z;
 
+            mp_update_light_values(lights[i], shader);
+        }
+
+        mp_begin_drawing(window, BLACK);
             mp_begin_3d_mode(&cam);
-
-            mp_draw_model(house, cam, DARK_GRAY);
+          
+            mp_draw_model(house,  cam, DARK_GRAY);
             mp_draw_model(ground, cam, DARK_GRAY);
 
         mp_end_drawing(window);
