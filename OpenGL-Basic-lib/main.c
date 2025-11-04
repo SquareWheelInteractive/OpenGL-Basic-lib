@@ -34,17 +34,22 @@ int main(){
     Texture grass_tex = mp_load_texture("./resources/grass.png");
     ground.albedo = grass_tex;
 
-    Light lights[MAX_LIGHTS];
-    lights[0]= mp_create_light((vec3s){.x=4, .y=1, .z= 0}, (Color){1, 0, 0, 1.0f}, 8, shader);
-    lights[1]= mp_create_light((vec3s){.x=-4, .y=1, .z=0}, (Color){0, 1, 0, 1.0f}, 8, shader);
-    lights[2]= mp_create_light((vec3s){.x=0, .y=1, .z=4}, (Color){0, 0, 1, 1.0f}, 8, shader);
-    lights[3]= mp_create_light((vec3s){.x=0, .y=1, .z=-4}, (Color){1, 1, 0, 1.0f}, 8, shader);
+    Light lights[3];
+    lights[0]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=4, .y=1, .z= 0}, (Color){1, 0, 0, 1.0f}, 8, glms_vec3_zero(), shader);
+    lights[1]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=-4, .y=1, .z=0}, (Color){0, 1, 0, 1.0f}, 8, glms_vec3_zero(), shader);
+    lights[2]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){0, 0, 1, 1.0f}, 8, glms_vec3_zero(), shader);
+
+    Light spot = mp_create_light(SPOT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){1, 1, 1, 1.0f}, 15, glms_vec3_zero(), shader);
 
     while (!mp_window_should_close(window)) {
         float dt = mp_get_frame_time();
         mp_update_camera_3d(window, &cam, 4, dt);
 
-        for (int i = 0; i < MAX_LIGHTS; i++) {
+        spot.position = cam.position;
+        spot.direction = glms_vec3_sub(cam.target, cam.position);
+        mp_update_light_values(spot, shader);
+
+        for (int i = 0; i < 3; i++) {
             vec4s pos = (vec4s){.x = lights[i].position.x,
                                 .y = lights[i].position.y,
                                 .z = lights[i].position.z,
