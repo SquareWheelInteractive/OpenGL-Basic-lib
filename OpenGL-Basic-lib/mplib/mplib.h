@@ -12,7 +12,7 @@
 #define WHITE (Color){1,1,1,1}
 #define BLACK (Color){0,0,0,1}
 #define MAGENTA (Color){0.4f, 0.35f, 0.55f, 1.0f}
-#define DARK_GRAY (Color){0.25f, 0.25f, 0.25f, 1.0f}
+#define DARK_GRAY (Color){0.1f, 0.1f, 0.1f, 1.0f}
 
 typedef struct{
     float r,g,b,a;

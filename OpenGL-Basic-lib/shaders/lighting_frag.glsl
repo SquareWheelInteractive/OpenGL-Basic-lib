@@ -22,6 +22,10 @@ struct Light {
 uniform sampler2D tex;
 uniform Light lights[MAX_LIGHTS];
 uniform vec4 ambient_color;
+uniform vec3 view_pos;
+
+float fog_density = 0.1;
+vec4 fog_color = vec4(0.1, 0.1, 0.1, 1.0);
 
 void main() {
     vec3 norm = normalize(normal);
@@ -51,5 +55,14 @@ void main() {
             }
         }
     }
+
     frag_color = texelColor*(ambient_color + diffuse);
+
+    float dist = length(view_pos - frag_pos);
+    float fog_factor= 1.0/exp((dist*fog_density)*(dist*fog_density));
+
+
+    fog_factor = clamp(fog_factor, 0.0, 1.0);
+
+    frag_color= mix(fog_color, frag_color, fog_factor);
 }

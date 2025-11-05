@@ -39,11 +39,17 @@ int main(){
     lights[1]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=-4, .y=1, .z=0}, (Color){0, 1, 0, 1.0f}, 8, glms_vec3_zero(), shader);
     lights[2]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){0, 0, 1, 1.0f}, 8, glms_vec3_zero(), shader);
 
-    Light spot = mp_create_light(SPOT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){1, 1, 1, 1.0f}, 15, glms_vec3_zero(), shader);
+    Light spot = mp_create_light(SPOT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){1, 1, 1, 1.0f}, 25, glms_vec3_zero(), shader);
+
+    int view_pos_loc = glad_glGetUniformLocation(shader, "view_pos");
 
     while (!mp_window_should_close(window)) {
         float dt = mp_get_frame_time();
         mp_update_camera_3d(window, &cam, 4, dt);
+
+        glUseProgram(shader);
+        glad_glUniform3f(view_pos_loc, cam.position.x, cam.position.y, cam.position.z);
+        glUseProgram(0);
 
         spot.position = cam.position;
         spot.direction = glms_vec3_sub(cam.target, cam.position);
@@ -62,7 +68,7 @@ int main(){
             mp_update_light_values(lights[i], shader);
         }
 
-        mp_begin_drawing(window, BLACK);
+        mp_begin_drawing(window, DARK_GRAY);
             mp_begin_3d_mode(&cam);
           
             mp_draw_model(house,  cam, DARK_GRAY);
