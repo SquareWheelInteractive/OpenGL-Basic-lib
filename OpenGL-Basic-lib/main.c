@@ -35,9 +35,9 @@ int main(){
     ground.albedo = grass_tex;
 
     Light lights[3];
-    lights[0]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=4, .y=1, .z= 0}, (Color){1, 0, 0, 1.0f}, 8, glms_vec3_zero(), shader);
-    lights[1]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=-4, .y=1, .z=0}, (Color){0, 1, 0, 1.0f}, 8, glms_vec3_zero(), shader);
-    lights[2]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){0, 0, 1, 1.0f}, 8, glms_vec3_zero(), shader);
+    lights[0]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x= 4, .y= 1, .z= 0}, (Color){1, 0, 0, 1.0f}, 8, glms_vec3_zero(), shader);
+    lights[1]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x=-4, .y= 1, .z= 0}, (Color){0, 1, 0, 1.0f}, 8, glms_vec3_zero(), shader);
+    lights[2]= mp_create_light(POINT_LIGHT_TYPE, (vec3s){.x= 0, .y= 1, .z= 4}, (Color){0, 0, 1, 1.0f}, 8, glms_vec3_zero(), shader);
 
     Light spot = mp_create_light(SPOT_LIGHT_TYPE, (vec3s){.x=0, .y=1, .z=4}, (Color){1, 1, 1, 1.0f}, 25, glms_vec3_zero(), shader);
 

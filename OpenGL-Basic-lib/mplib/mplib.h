@@ -12,7 +12,7 @@
 #define WHITE (Color){1,1,1,1}
 #define BLACK (Color){0,0,0,1}
 #define MAGENTA (Color){0.4f, 0.35f, 0.55f, 1.0f}
-#define DARK_GRAY (Color){0.1f, 0.1f, 0.1f, 1.0f}
+#define DARK_GRAY (Color){0.25f, 0.25f, 0.25f, 1.0f}
 
 typedef struct{
     float r,g,b,a;
@@ -44,9 +44,14 @@ typedef struct{
     unsigned int* indices;
 } MPMesh;
 typedef struct{
+    vec3s position;
+    vec3s rotation;
+    float scale;
+} Transform;
+typedef struct{
     MPMesh mesh;
     unsigned int shader_program;
-    mat4s transform;
+    Transform transform;
     Texture albedo;
 } MPModel;
 
