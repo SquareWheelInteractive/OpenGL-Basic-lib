@@ -10,6 +10,17 @@
 int main(){
     GLFWwindow* window = mp_init(WIN_WIDTH, WIN_HEIGHT, "mplib");
 
+    char* paths[6] = {
+        "resources/clearOcean/vz_clear_ocean_right.png",
+        "resources/clearOcean/vz_clear_ocean_left.png",
+        "resources/clearOcean/vz_clear_ocean_up.png",
+        "resources/clearOcean/vz_clear_ocean_down.png",
+        "resources/clearOcean/vz_clear_ocean_front.png",
+        "resources/clearOcean/vz_clear_ocean_back.png"
+    };
+
+    CubeMap skybox = load_cubemap(paths);
+
     Camera3D cam;
     cam.position = (vec3s){.x = 0, .y = 1.0f, .z = 2};
     cam.target = (vec3s){.x = 0, .y = 0, .z = 0};
@@ -70,6 +81,7 @@ int main(){
 
         mp_begin_drawing(window, DARK_GRAY);
             mp_begin_3d_mode(&cam);
+            draw_cubemap(skybox, cam);
           
             mp_draw_model(house,  cam, DARK_GRAY);
             mp_draw_model(ground, cam, DARK_GRAY);

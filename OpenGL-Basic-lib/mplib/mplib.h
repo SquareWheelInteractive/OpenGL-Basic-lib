@@ -19,6 +19,13 @@ typedef struct{
 } Color;
 
 typedef struct{
+    unsigned int vao;
+    unsigned int vbo;
+    unsigned int cubemap_tex;
+    unsigned int shader;
+} CubeMap;
+
+typedef struct{
     vec3s position;
     vec3s target;
     vec3s up;
@@ -81,3 +88,7 @@ void mp_draw_model(MPModel model, Camera3D camera, Color color);
 Texture mp_load_texture(const char* texture_path);
 
 char* mp_format_text(const char* fmt, ...);
+
+
+CubeMap load_cubemap(char** faces_path);
+void draw_cubemap(CubeMap cubemap, Camera3D camera);

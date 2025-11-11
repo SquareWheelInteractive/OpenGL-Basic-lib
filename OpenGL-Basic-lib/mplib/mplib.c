@@ -98,6 +98,13 @@ unsigned int mp_create_shader(const char *vert_shader_path, const char *frag_sha
 
     glad_glDeleteShader(vert_shader);
     glad_glDeleteShader(frag_shader);
+    GLint success;
+    glGetProgramiv(shader_prog, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(shader_prog, 512, NULL, infoLog);
+        printf("Shader link error:\n%s\n", infoLog);
+    }
 
     free((void*)vert);
     free((void*)frag);
@@ -382,4 +389,106 @@ char* mp_format_text(const char* fmt, ...) {
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
     return buffer;
+}
+
+CubeMap load_cubemap(char** faces_path) {
+    CubeMap cubemap = {0};
+    cubemap.shader = mp_create_shader("shaders/cubemap_vert.glsl", "shaders/cubemap_frag.glsl");
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+    glad_glGenVertexArrays(1, &cubemap.vao);
+    glad_glBindVertexArray(cubemap.vao);
+    glad_glGenBuffers(1, &cubemap.vbo);
+    glad_glBindBuffer(GL_ARRAY_BUFFER, cubemap.vbo);
+    glad_glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+    glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glad_glEnableVertexAttribArray(0);
+
+    glad_glGenTextures(1, &cubemap.cubemap_tex);
+    glad_glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemap_tex);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < 6; i++) {
+        unsigned char *data = stbi_load(faces_path[i], &width, &height, &nrChannels, 0);
+        if (data) {
+            glad_glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
+                         0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+            );
+            stbi_image_free(data);
+        }
+        else {
+            printf("Cubemap tex failed to load at path: %s\n", faces_path[i]);
+            stbi_image_free(data);
+        }
+    }
+    glad_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glad_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glad_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glad_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glad_glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return cubemap;
+}  
+void draw_cubemap(CubeMap cubemap, Camera3D camera){
+    glad_glDepthFunc(GL_LEQUAL);
+    glad_glUseProgram(cubemap.shader);
+
+    int view_loc       = glad_glGetUniformLocation(cubemap.shader, "view");
+    int projection_loc = glad_glGetUniformLocation(cubemap.shader, "proj");
+
+    mat4s view_no_translation = glms_mat4_ins3(
+        glms_mat4_pick3(camera.cam_matrix),
+        glms_mat4_identity()
+    );
+    glad_glUniformMatrix4fv(projection_loc, 1, GL_FALSE, (const float*)camera.proj_matrix.raw);
+    glad_glUniformMatrix4fv(view_loc, 1, GL_FALSE, (const float*)view_no_translation.raw);
+
+    glad_glActiveTexture(GL_TEXTURE0);
+    glad_glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.cubemap_tex);
+
+    glad_glBindVertexArray(cubemap.vao);
+    glad_glDrawArrays(GL_TRIANGLES, 0, 36);
+    glad_glDepthFunc(GL_LESS);
 }
