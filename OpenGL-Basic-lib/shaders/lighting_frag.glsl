@@ -25,7 +25,7 @@ uniform vec4 ambient_color;
 uniform vec3 view_pos;
 
 float fog_density = 0.08;
-vec4 fog_color = vec4(0.25, 0.25, 0.25, 1.0);
+vec4 fog_color = vec4(0.7, 0.6, 0.66, 1.0);
 
 void main() {
     vec3 norm = normalize(normal);

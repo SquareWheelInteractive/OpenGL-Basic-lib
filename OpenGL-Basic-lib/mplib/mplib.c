@@ -160,7 +160,7 @@ MPMesh mp_create_quad(){
 }
 MPModel mp_load_model_from_mesh(MPMesh mesh){
     MPModel model = {0};
-    model.transform.scale = 1;
+    model.transform_mat = glms_mat4_identity();
     model.mesh = mesh;
     return model;
 }
@@ -272,23 +272,23 @@ Texture mp_load_texture(const char *texture_path){
 void mp_draw_model(MPModel model, Camera3D camera, Color color){
     glad_glUseProgram(model.shader_program);
 
-    mat4s trans = glms_translate(glms_mat4_identity(), model.transform.position);
+    // mat4s trans = glms_translate(glms_mat4_identity(), model.transform_mat.position);
 
-    mat4s x_rotation = glms_rotate_x(glms_mat4_identity(), model.transform.rotation.x * DEG2RAD);
-    mat4s y_rotation = glms_rotate_y(glms_mat4_identity(), model.transform.rotation.y * DEG2RAD);
-    mat4s z_rotation = glms_rotate_z(glms_mat4_identity(), model.transform.rotation.z * DEG2RAD);
-    mat4s rotation = glms_mat4_mul(z_rotation, glms_mat4_mul(y_rotation, x_rotation));
+    // mat4s x_rotation = glms_rotate_x(glms_mat4_identity(), model.transform_mat.rotation.x * DEG2RAD);
+    // mat4s y_rotation = glms_rotate_y(glms_mat4_identity(), model.transform_mat.rotation.y * DEG2RAD);
+    // mat4s z_rotation = glms_rotate_z(glms_mat4_identity(), model.transform_mat.rotation.z * DEG2RAD);
+    // mat4s rotation = glms_mat4_mul(z_rotation, glms_mat4_mul(y_rotation, x_rotation));
 
-    mat4s scale = glms_scale_uni(glms_mat4_identity(), model.transform.scale);
+    // mat4s scale = glms_scale_uni(glms_mat4_identity(), model.transform_mat.scale);
 
-    mat4s transform = glms_mat4_identity();
-    transform = glms_mat4_mul(trans, glms_mat4_mul(rotation, scale));
+    // mat4s transform = glms_mat4_identity();
+    // transform = glms_mat4_mul(trans, glms_mat4_mul(rotation, scale));
 
     int model_loc   = glad_glGetUniformLocation(model.shader_program, "model");
     int view_loc    = glad_glGetUniformLocation(model.shader_program, "view");
     int proj_loc    = glad_glGetUniformLocation(model.shader_program, "projection");
     int ambient_loc = glad_glGetUniformLocation(model.shader_program, "ambient_color");
-    glad_glUniformMatrix4fv(model_loc,1, GL_FALSE, (const float*)transform.raw);
+    glad_glUniformMatrix4fv(model_loc,1, GL_FALSE, (const float*)model.transform_mat.raw);
     glad_glUniformMatrix4fv(view_loc, 1, GL_FALSE, (const float*)camera.cam_matrix.raw);
     glad_glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (const float*)camera.proj_matrix.raw);
     glad_glUniform4f(ambient_loc, color.r, color.g, color.b, color.a);

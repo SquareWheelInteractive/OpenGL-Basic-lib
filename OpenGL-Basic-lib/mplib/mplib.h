@@ -58,7 +58,7 @@ typedef struct{
 typedef struct{
     MPMesh mesh;
     unsigned int shader_program;
-    Transform transform;
+    mat4s transform_mat;
     Texture albedo;
 } MPModel;
 

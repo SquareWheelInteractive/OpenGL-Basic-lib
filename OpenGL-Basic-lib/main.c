@@ -11,12 +11,12 @@ int main(){
     GLFWwindow* window = mp_init(WIN_WIDTH, WIN_HEIGHT, "mplib");
 
     char* paths[6] = {
-        "resources/clearOcean/vz_clear_ocean_right.png",
-        "resources/clearOcean/vz_clear_ocean_left.png",
-        "resources/clearOcean/vz_clear_ocean_up.png",
-        "resources/clearOcean/vz_clear_ocean_down.png",
-        "resources/clearOcean/vz_clear_ocean_front.png",
-        "resources/clearOcean/vz_clear_ocean_back.png"
+        "resources/sky_sunset/right.png",
+        "resources/sky_sunset/left.png",
+        "resources/sky_sunset/top.png",
+        "resources/sky_sunset/bottom.png",
+        "resources/sky_sunset/front.png",
+        "resources/sky_sunset/back.png"
     };
 
     CubeMap skybox = load_cubemap(paths);
@@ -83,8 +83,8 @@ int main(){
             mp_begin_3d_mode(&cam);
             draw_cubemap(skybox, cam);
           
-            mp_draw_model(house,  cam, DARK_GRAY);
-            mp_draw_model(ground, cam, DARK_GRAY);
+            mp_draw_model(house,  cam, (Color){.7f, .7f, .7f, 1.0f});
+            mp_draw_model(ground, cam, (Color){.7f, .7f, .7f, 1.0f});
 
         mp_end_drawing(window);
     }
